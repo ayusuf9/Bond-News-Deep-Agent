@@ -1,12 +1,12 @@
 # Bond News Deep Agent
 
-A production-grade [Deep Agents](https://docs.langchain.com/oss/python/deepagents) application that fetches and synthesizes **fixed-income bond news** using Google Gemini and Tavily. A main orchestrator delegates to five specialist subagents (treasuries / rates, IG corporates, high-yield, sovereign & EM, munis), then writes a consolidated markdown report.
+A production grade agentic workflow that fetches and synthesizes **fixed-income bond news** using Google Gemini and Tavily. A main orchestrator delegates to five specialist subagents (treasuries / rates, IG corporates, high-yield, sovereign & EM, munis), then writes a consolidated markdown report.
 
 ## Architecture
 
 ```
                     ┌────────────────────────────────────────┐
-   user query ────► │  Main Deep Agent (Gemini, orchestrator)│
+   user query ────► │  Main Deep Agent (orchestrator)│
                     └──┬──────────────────────────────────┬──┘
                        │ delegate                          │ write_file
                        ▼                                   ▼
@@ -51,7 +51,6 @@ uv pip install -e ".[dev]"
 
 ```bash
 cp .env.example .env
-# edit .env and set GOOGLE_API_KEY and TAVILY_API_KEY
 ```
 
 All other settings are optional and documented inline in `.env.example`.
