@@ -1,0 +1,59 @@
+[project]
+name = "bond-news-agent"
+version = "0.1.0"
+description = "Deep Agents (LangGraph) orchestrator that fetches and synthesizes fixed-income bond news using Google Gemini and Tavily."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Bond News Agent" }]
+license = { text = "MIT" }
+keywords = ["langgraph", "deepagents", "bonds", "fixed-income", "news", "agent", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+]
+
+dependencies = [
+    "deepagents>=0.6.3,<0.7.0",
+    "langchain-google-genai>=2.1.0,<5.0.0",
+    "tavily-python>=0.7.0,<0.8.0",
+    "pydantic>=2.7.0,<3.0.0",
+    "pydantic-settings>=2.4.0,<3.0.0",
+    "tenacity>=8.5.0,<10.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "rich>=13.7.0,<15.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.6.0",
+]
+
+[project.scripts]
+bond-news-agent = "bond_news_agent.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+pythonpath = ["src"]
