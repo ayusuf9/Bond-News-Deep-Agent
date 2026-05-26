@@ -1,12 +1,14 @@
 # Bond News Deep Agent
 
-A production grade agentic workflow that fetches and synthesizes **fixed-income bond news** using Google Gemini and Tavily. A main orchestrator delegates to five specialist subagents (treasuries / rates, IG corporates, high-yield, sovereign & EM, munis), then writes a consolidated markdown report.
+A production grade agentic workflow that fetches and synthesizes **fixed-income bond news**. A main orchestrator delegates to five specialist subagents (treasuries / rates, IG corporates, high-yield, sovereign & EM, munis), then writes a consolidated markdown report.
+
+The agent is **model-agnostic**: it ships defaulting to Google Gemini, but works with any LangChain-supported chat model (OpenAI, Anthropic, Azure OpenAI, AWS Bedrock, Vertex AI, OpenRouter, Fireworks, Ollama, …). See [Model selection](#model-selection) below.
 
 ## Architecture
 
 ```
                     ┌────────────────────────────────────────┐
-   user query ────► │  Main Deep Agent (orchestrator)│
+   user query ────► │   Main Deep Agent (orchestrator LLM)   │
                     └──┬──────────────────────────────────┬──┘
                        │ delegate                          │ write_file
                        ▼                                   ▼
@@ -28,8 +30,8 @@ A production grade agentic workflow that fetches and synthesizes **fixed-income 
 ## Prerequisites
 
 - Python 3.10+
-- A Google Gemini API key: <https://aistudio.google.com/app/apikey>
 - A Tavily API key: <https://app.tavily.com/>
+- An API key for **one** LLM provider (defaults to Google Gemini — see [Model selection](#model-selection) for alternatives)
 
 ## Install
 
@@ -54,6 +56,63 @@ cp .env.example .env
 ```
 
 All other settings are optional and documented inline in `.env.example`.
+
+## Model selection
+
+The agent passes its `model_name` straight through to LangChain's [`init_chat_model`](https://python.langchain.com/docs/integrations/chat/), so any provider supported there works here. Pick one of the following patterns; you only need an API key for the provider you choose.
+
+### Option A: switch via `.env` (no code changes)
+
+```bash
+# .env
+TAVILY_API_KEY=tvly-...
+
+# Pick ONE provider key:
+GOOGLE_API_KEY=AIza...                  # Gemini (default)
+# OPENAI_API_KEY=sk-...                 # OpenAI
+# ANTHROPIC_API_KEY=sk-ant-...          # Anthropic
+# OPENROUTER_API_KEY=sk-or-...          # OpenRouter (proxy to many providers)
+
+# And select the model identifier (provider:model format):
+BOND_NEWS_MODEL_NAME=google_genai:gemini-2.5-pro
+# BOND_NEWS_MODEL_NAME=openai:gpt-4o
+# BOND_NEWS_MODEL_NAME=anthropic:claude-sonnet-4-6
+# BOND_NEWS_MODEL_NAME=openrouter:anthropic/claude-sonnet-4-6
+# BOND_NEWS_MODEL_NAME=azure_openai:gpt-4o
+# BOND_NEWS_MODEL_NAME=bedrock:anthropic.claude-sonnet-4
+# BOND_NEWS_MODEL_NAME=ollama:llama3.1:70b
+```
+
+You may also need to install the corresponding LangChain integration package (e.g. `pip install "langchain[openai]"` or `pip install "langchain[anthropic]"`). The default install only includes `langchain-google-genai`.
+
+### Option B: pass an initialized model instance
+
+For full control over temperature, max tokens, base URLs, retries, etc., build the model yourself and inject it:
+
+```python
+from langchain_anthropic import ChatAnthropic
+from bond_news_agent import Settings, build_agent, run_agent
+
+model = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.2, max_tokens=8000)
+settings = Settings(model_name="anthropic:claude-sonnet-4-6")  # placeholder; ignored when model is passed
+
+# Edit src/bond_news_agent/agent.py:build_agent to accept an injected `model=`
+# (one-line change), or call create_deep_agent directly with model=model.
+```
+
+### Option C: use a self-hosted / private model
+
+Same pattern — point at Ollama, vLLM, or LM Studio:
+
+```bash
+BOND_NEWS_MODEL_NAME=ollama:llama3.1:70b   # requires Ollama running locally
+```
+
+For air-gapped / on-prem deployments, swap Gemini for Vertex AI (`google_vertexai:...`) so prompt data stays in your own GCP tenant.
+
+### Picking a model
+
+The orchestrator + 5 specialists need **strong tool-calling** and **instruction following**. Verified to work well: `google_genai:gemini-2.5-pro`, `openai:gpt-4o` / `gpt-4.1`, `anthropic:claude-sonnet-4-6`. Smaller / faster tiers (`gemini-2.5-flash`, `gpt-4o-mini`, `claude-haiku-4`) work for `--category`-scoped runs but can struggle with the full 5-subagent orchestration on long queries.
 
 ## Run
 
